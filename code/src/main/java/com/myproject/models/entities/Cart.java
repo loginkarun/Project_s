@@ -18,7 +18,9 @@ import java.util.UUID;
  * Entity representing a shopping cart
  */
 @Entity
-@Table(name = "carts")
+@Table(name = "cart", indexes = {
+    @Index(name = "idx_user_id", columnList = "user_id")
+})
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,58 +28,58 @@ import java.util.UUID;
 public class Cart {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false)
     private UUID userId;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
-    private List<CartItem> items = new ArrayList<>();
+    private List<CartItemEntity> items = new ArrayList<>();
 
-    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_price", nullable = false, precision = 19, scale = 2)
     @Builder.Default
     private BigDecimal totalPrice = BigDecimal.ZERO;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
     /**
-     * Adds an item to the cart
+     * Helper method to add item to cart
      */
-    public void addItem(CartItem item) {
+    public void addItem(CartItemEntity item) {
         items.add(item);
         item.setCart(this);
         recalculateTotalPrice();
     }
 
     /**
-     * Removes an item from the cart
+     * Helper method to remove item from cart
      */
-    public void removeItem(CartItem item) {
+    public void removeItem(CartItemEntity item) {
         items.remove(item);
         item.setCart(null);
         recalculateTotalPrice();
     }
 
     /**
-     * Recalculates the total price of all items in the cart
+     * Recalculate total price based on items
      */
     public void recalculateTotalPrice() {
         this.totalPrice = items.stream()
-            .map(CartItem::calculateItemTotal)
+            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**
-     * Checks if the cart is empty
+     * Check if cart is empty
      */
     public boolean isEmpty() {
         return items == null || items.isEmpty();
