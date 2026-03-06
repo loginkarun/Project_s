@@ -1,0 +1,235 @@
+openapi: 3.0.3
+info:
+  title: core_ask API
+  version: 1.0.0
+  description: Generated from LLD batch - Shopping Cart Item Removal Feature
+servers:
+  - url: https://example.com
+    description: Production server
+tags:
+  - name: Cart Management
+    description: Operations related to shopping cart management
+paths:
+  /api/cart/items/{itemId}:
+    delete:
+      tags:
+        - Cart Management
+      summary: Remove item from cart
+      description: Removes a specific item from the user's shopping cart and recalculates the total price
+      operationId: SCRUM-11694_removeItemFromCart_delete
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: The unique identifier of the cart item to be removed
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Item successfully removed from cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cart or item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/cart:
+    get:
+      tags:
+        - Cart Management
+      summary: Get current cart
+      description: Retrieves the current state of the user's shopping cart including all items and total price
+      operationId: SCRUM-11694_getCart_get
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cart not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    CartResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - items
+        - totalPrice
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the cart
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the user who owns the cart
+        items:
+          type: array
+          description: List of items in the cart
+          items:
+            $ref: '#/components/schemas/CartItem'
+        totalPrice:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total price of all items in the cart
+          example: 99.99
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last cart update
+        isEmpty:
+          type: boolean
+          description: Indicates if the cart is empty
+        emptyMessage:
+          type: string
+          description: Message displayed when cart is empty
+          example: Cart is empty
+    CartItem:
+      type: object
+      required:
+        - id
+        - productId
+        - quantity
+        - price
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the cart item
+        productId:
+          type: string
+          format: uuid
+          description: Reference to the product
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity of the product in cart
+          example: 2
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per unit of the product
+          example: 49.99
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - traceId
+        - errorCode
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+        traceId:
+          type: string
+          description: Unique identifier for tracing the error
+        errorCode:
+          type: string
+          description: Application-specific error code
+          example: CART_NOT_FOUND
+        message:
+          type: string
+          description: Human-readable error message
+          example: Item not found in cart
+        details:
+          type: array
+          description: Additional error details
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+          description: Field name that caused the error
+          example: itemId
+        issue:
+          type: string
+          description: Description of the issue with the field
+          example: Item does not exist in the cart
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+  parameters:
+    itemIdParam:
+      name: itemId
+      in: path
+      required: true
+      description: The unique identifier of the cart item
+      schema:
+        type: string
+        format: uuid
+  responses:
+    UnauthorizedError:
+      description: Authentication token is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
