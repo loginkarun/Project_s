@@ -5,8 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
- * Main Spring Boot Application class for myproject
- * Manages shopping cart operations
+ * Main Spring Boot Application for Shopping Cart Management System
+ * 
+ * @author Generated
+ * @version 1.0.0
  */
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.myproject.models.repositories")
