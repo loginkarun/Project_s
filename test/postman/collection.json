@@ -1,0 +1,579 @@
+{
+  "info": {
+    "name": "Shopping Cart API - Remove Item Tests",
+    "description": "Comprehensive API test collection for cart item removal feature (SCRUM-11694)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "{{base_url}}",
+      "type": "string"
+    },
+    {
+      "key": "cart_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "item_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Positive Tests",
+      "item": [
+        {
+          "name": "TC001 - Get Current Cart (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has cart data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('userId');",
+                  "    pm.expect(jsonData).to.have.property('items');",
+                  "    pm.expect(jsonData).to.have.property('totalPrice');",
+                  "    pm.expect(jsonData).to.have.property('updatedAt');",
+                  "    ",
+                  "    // Store cart_id and first item_id for subsequent tests",
+                  "    pm.collectionVariables.set('cart_id', jsonData.id);",
+                  "    if (jsonData.items && jsonData.items.length > 0) {",
+                  "        pm.collectionVariables.set('item_id', jsonData.items[0].id);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": ["{{base_url}}"],
+              "path": ["cart"]
+            },
+            "description": "Retrieve current cart to setup test data"
+          },
+          "response": []
+        },
+        {
+          "name": "TC002 - Remove Item from Cart Successfully",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains updated cart', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('items');",
+                  "    pm.expect(jsonData).to.have.property('totalPrice');",
+                  "    pm.expect(jsonData).to.have.property('updatedAt');",
+                  "});",
+                  "",
+                  "pm.test('Item is removed from cart', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var removedItemId = pm.collectionVariables.get('item_id');",
+                  "    var itemExists = jsonData.items.some(item => item.id === removedItemId);",
+                  "    pm.expect(itemExists).to.be.false;",
+                  "});",
+                  "",
+                  "pm.test('Total price is recalculated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalPrice).to.be.a('number');",
+                  "    pm.expect(jsonData.totalPrice).to.be.at.least(0);",
+                  "});",
+                  "",
+                  "pm.test('Updated timestamp is present', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.updatedAt).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "{{item_id}}"]
+            },
+            "description": "Remove an item from the cart successfully"
+          },
+          "response": []
+        },
+        {
+          "name": "TC003 - Verify Cart State Persists After Removal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Cart state is persisted', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var removedItemId = pm.collectionVariables.get('item_id');",
+                  "    var itemExists = jsonData.items.some(item => item.id === removedItemId);",
+                  "    pm.expect(itemExists).to.be.false;",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": ["{{base_url}}"],
+              "path": ["cart"]
+            },
+            "description": "Verify cart state persists after item removal"
+          },
+          "response": []
+        },
+        {
+          "name": "TC004 - Remove Last Item Shows Empty Cart Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Cart is empty', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.isEmpty).to.be.true;",
+                  "    pm.expect(jsonData.items).to.be.an('array').that.is.empty;",
+                  "});",
+                  "",
+                  "pm.test('Empty cart message is displayed', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.emptyMessage).to.equal('Your cart is empty');",
+                  "});",
+                  "",
+                  "pm.test('Total price is zero', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.totalPrice).to.equal(0);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/{{last_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "{{last_item_id}}"]
+            },
+            "description": "Remove the last item from cart and verify empty message"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Negative Tests",
+      "item": [
+        {
+          "name": "TC005 - Remove Non-Existent Item (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response structure is correct', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "    pm.expect(jsonData).to.have.property('traceId');",
+                  "    pm.expect(jsonData).to.have.property('errorCode');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates item not found', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('not found');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "00000000-0000-0000-0000-000000000000"]
+            },
+            "description": "Attempt to remove a non-existent item from cart"
+          },
+          "response": []
+        },
+        {
+          "name": "TC006 - Remove Item with Invalid UUID Format (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error response structure is correct', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "    pm.expect(jsonData).to.have.property('errorCode');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates validation failure', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('invalid');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/invalid-uuid-format",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "invalid-uuid-format"]
+            },
+            "description": "Attempt to remove item with invalid UUID format"
+          },
+          "response": []
+        },
+        {
+          "name": "TC007 - Remove Item Without Authentication (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error response indicates unauthorized', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "{{item_id}}"]
+            },
+            "description": "Attempt to remove item without authentication token"
+          },
+          "response": []
+        },
+        {
+          "name": "TC008 - Remove Item from Another User's Cart (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Error response indicates forbidden', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Forbidden');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{other_user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "{{item_id}}"]
+            },
+            "description": "Attempt to remove item from another user's cart"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Performance Tests",
+      "item": [
+        {
+          "name": "TC009 - Remove Item Performance Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms (NFR requirement)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 300ms (optimal)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(300);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "{{item_id}}"]
+            },
+            "description": "Performance test for item removal operation"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases",
+      "item": [
+        {
+          "name": "TC010 - Remove Item Twice (Idempotency Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates item not found', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('not found');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "{{item_id}}"]
+            },
+            "description": "Attempt to remove the same item twice to test idempotency"
+          },
+          "response": []
+        },
+        {
+          "name": "TC011 - Remove Item with Null UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});",
+                  "",
+                  "pm.test('Error response is returned', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cart/items/null",
+              "host": ["{{base_url}}"],
+              "path": ["cart", "items", "null"]
+            },
+            "description": "Edge case: attempt to remove item with null UUID"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
